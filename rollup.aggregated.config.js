@@ -1,5 +1,6 @@
 import commonjs from 'rollup-plugin-commonjs';
 import resolve from 'rollup-plugin-node-resolve';
+import { terser } from "rollup-plugin-terser";
 
 var pkg = require('./package.json');
 
@@ -17,11 +18,33 @@ const
 				file: "dist/ramda.mjs",
 				format: "esm",
         banner: banner
+			},
+      {
+				file: "dist/ramda.cjs",
+				format: "cjs",
+        banner: banner
+			},
+      {
+				file: "dist/ramda.js",
+				format: "umd",
+        banner: banner,
+        name: 'R',
+        exports: 'named'
+			},
+      {
+				file: "dist/ramda.min.js",
+				format: "umd",
+        banner: banner,
+        name: 'R',
+        exports: 'named'
 			}
 		],
 		plugins: [
 			commonjs(),
-			resolve({ preferBuiltins: false })
+			resolve({ preferBuiltins: false }),
+      terser({
+        include: [/^.+\.min\.js$/]
+      })
 		]
 	};
 
