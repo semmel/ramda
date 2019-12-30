@@ -3,6 +3,7 @@ import _dispatchable from './internal/_dispatchable';
 import _makeFlat from './internal/_makeFlat';
 import _xchain from './internal/_xchain';
 import map from './map';
+import {chain as pChain} from './static-land-modules/promise.js';
 
 
 /**
@@ -31,9 +32,12 @@ import map from './map';
  *
  *      R.chain(R.append, R.head)([1, 2, 3]); //=> [1, 2, 3, 1]
  */
-var chain = _curry2(_dispatchable(['fantasy-land/chain', 'chain'], _xchain, function chain(fn, monad) {
+var chain = _curry2(_dispatchable(['fantasy-land/chain', 'chain', 'flatMap'], _xchain, function chain(fn, monad) {
   if (typeof monad === 'function') {
     return function(x) { return fn(monad(x))(x); };
+  }
+  else if (Object.prototype.toString.call(monad) === '[object Promise]') {
+    return pChain(fn, monad);
   }
   return _makeFlat(false)(map(fn, monad));
 }));
