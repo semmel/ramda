@@ -7,7 +7,7 @@ var pkg = require('./package.json');
 var banner = '//  Ramda v' + pkg.version + '\n'
   + '//  https://github.com/ramda/ramda\n'
   + '//  (c) 2013-' + new Date().getFullYear() + ' Scott Sauyet, Michael Hurley, and David Chambers,\n'
-  + '//  extend with Static-Land modules by Matthias Seemann'
+  + '//  extend with StaticLand-like modules by Matthias Seemann'
   + '//  Ramda may be freely distributed under the MIT license.\n';
 
 const

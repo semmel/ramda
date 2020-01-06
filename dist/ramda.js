@@ -1,7 +1,7 @@
 //  Ramda v0.26.1
 //  https://github.com/ramda/ramda
-//  (c) 2013-2019 Scott Sauyet, Michael Hurley, and David Chambers,
-//  extend with Static-Land modules by Matthias Seemann//  Ramda may be freely distributed under the MIT license.
+//  (c) 2013-2020 Scott Sauyet, Michael Hurley, and David Chambers,
+//  extend with StaticLand-like modules by Matthias Seemann//  Ramda may be freely distributed under the MIT license.
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
@@ -798,9 +798,42 @@
    */
 
   const 
-  	// ap :: Promise (a -> b) -> Promise a -> Promise b
-  	ap = (fnPromise, aPromise) =>
-  		fnPromise.then(fn => aPromise.then(fn)),
+  	ap_ = (fnPromise, aPromise) => fnPromise.then(fn => aPromise.then(fn)),
+    // this implementation avoids the UnhandledPromiseRejection error
+    // when Promise a fails
+    // ap :: Promise (a -> b) -> Promise a -> Promise b
+    ap = (fnPromise, aPromise) => {
+      if (typeof Promise.allSettled === 'function') {
+        return Promise.allSettled([fnPromise, aPromise])
+        .then(([fnOutcome, anOutcome]) => {
+          if ((fnOutcome.status === 'fulfilled') && (anOutcome.status === 'fulfilled')) {
+            return fnOutcome.value(anOutcome.value);
+          }
+          else if (fnOutcome.status === 'fulfilled') {
+            return Promise.reject(anOutcome.reason);
+          }
+          else if (anOutcome.status === 'fulfilled') {
+            return Promise.reject(fnOutcome.reason);
+          }
+          else {
+            const
+              errors = [],
+              aggregateError = new Error(`${fnOutcome.reason.message},\n${anOutcome.reason.message}`);
+
+            aggregateError.name = "AggregateError";
+            aggregateError.errors = errors;
+
+            errors.push(fnOutcome.reason);
+            errors.push(anOutcome.reason);
+
+            return Promise.reject(aggregateError);
+          }
+        });
+      }
+      else {
+        return ap_(fnPromise, aPromise);
+      }
+    },
 
   	// map :: (a -> b) -> Promise a -> Promise b
   	map = (fn, aPromise) => aPromise.then(fn),
