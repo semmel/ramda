@@ -5,7 +5,7 @@ import _reduce from './internal/_reduce';
 import _xmap from './internal/_xmap';
 import curryN from './curryN';
 import keys from './keys';
-import {map as pMap} from './static-land-modules/promise.js';
+import {map as mapPromise} from './static-land-modules/promise.js';
 
 
 /**
@@ -55,7 +55,7 @@ var map = _curry2(_dispatchable(['fantasy-land/map', 'map'], _xmap, function map
         return acc;
       }, {}, keys(functor));
     case '[object Promise]':
-      return pMap(fn, functor);
+      return mapPromise(fn, functor);
     default:
       return _map(fn, functor);
   }

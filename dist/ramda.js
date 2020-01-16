@@ -7,7 +7,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
   (global = global || self, factory(global.R = {}));
-}(this, function (exports) { 'use strict';
+}(this, (function (exports) { 'use strict';
 
   /**
    * A function that always returns `false`. Any passed in parameters are ignored.
@@ -815,16 +815,24 @@
           else if (anOutcome.status === 'fulfilled') {
             return Promise.reject(fnOutcome.reason);
           }
+          else if (anOutcome.reason === fnOutcome.reason) {
+            return Promise.reject(fnOutcome.reason);
+          }
           else {
             const
-              errors = [],
               aggregateError = new Error(`${fnOutcome.reason.message},\n${anOutcome.reason.message}`);
 
             aggregateError.name = "AggregateError";
-            aggregateError.errors = errors;
 
-            errors.push(fnOutcome.reason);
-            errors.push(anOutcome.reason);
+            if (anOutcome.reason.name === "AggregateError") {
+              aggregateError.errors = anOutcome.reason.errors.concat([fnOutcome.reason]);
+            }
+            else if (fnOutcome.reason.name === "AggregateError") {
+              aggregateError.errors = fnOutcome.reason.errors.concat([anOutcome.reason]);
+            }
+            else {
+              aggregateError.errors = [fnOutcome.reason, anOutcome.reason];
+            }
 
             return Promise.reject(aggregateError);
           }
@@ -9701,4 +9709,4 @@
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));

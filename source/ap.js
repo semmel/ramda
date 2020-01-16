@@ -2,7 +2,7 @@ import _concat from './internal/_concat';
 import _curry2 from './internal/_curry2';
 import _reduce from './internal/_reduce';
 import map from './map';
-import {ap as pAp} from './static-land-modules/promise.js';
+import {ap as apPromise} from './static-land-modules/promise.js';
 
 
 /**
@@ -40,7 +40,7 @@ var ap = _curry2(function ap(applyF, applyX) {
         : typeof applyF === 'function'
           ? function(x) { return applyF(x)(applyX(x)); }
           : Object.prototype.toString.call(applyF) === '[object Promise]'
-            ? pAp(applyF, applyX)
+            ? apPromise(applyF, applyX)
             : _reduce(function(acc, f) { return _concat(acc, map(f, applyX)); }, [], applyF)
   );
 });
