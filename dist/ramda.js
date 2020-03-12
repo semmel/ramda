@@ -1,4 +1,4 @@
-//  Ramda v0.26.1
+//  Ramda v0.27.0
 //  https://github.com/ramda/ramda
 //  (c) 2013-2020 Scott Sauyet, Michael Hurley, and David Chambers,
 //  extend with StaticLand-like modules by Matthias Seemann//  Ramda may be freely distributed under the MIT license.
@@ -954,65 +954,6 @@
   });
 
   /**
-   * Retrieves the values at given paths of an object.
-   *
-   * @func
-   * @memberOf R
-   * @category Object
-   * @typedefn Idx = [String | Int]
-   * @sig [Idx] -> {a} -> [a | Undefined]
-   * @param {Array} pathsArray The array of paths to be fetched.
-   * @param {Object} obj The object to retrieve the nested properties from.
-   * @return {Array} A list consisting of values at paths specified by "pathsArray".
-   * @see R.path
-   * @example
-   *
-   *      R.paths([['a', 'b'], ['p', 0, 'q']], {a: {b: 2}, p: [{q: 3}]}); //=> [2, 3]
-   *      R.paths([['a', 'b'], ['p', 'r']], {a: {b: 2}, p: [{q: 3}]}); //=> [2, undefined]
-   */
-  var paths = _curry2(function paths(pathsArray, obj) {
-    return pathsArray.map(function(paths) {
-      var val = obj;
-      var idx = 0;
-      var p;
-      while (idx < paths.length) {
-        if (val == null) {
-          return;
-        }
-        p = paths[idx];
-        val = _isInteger(p) ? nth(p, val) : val[p];
-        idx += 1;
-      }
-      return val;
-    });
-  });
-
-  /**
-   * Retrieve the value at a given path.
-   *
-   * @func
-   * @memberOf R
-   * @since v0.2.0
-   * @category Object
-   * @typedefn Idx = String | Int
-   * @sig [Idx] -> {a} -> a | Undefined
-   * @param {Array} path The path to use.
-   * @param {Object} obj The object to retrieve the nested property from.
-   * @return {*} The data at `path`.
-   * @see R.prop, R.nth
-   * @example
-   *
-   *      R.path(['a', 'b'], {a: {b: 2}}); //=> 2
-   *      R.path(['a', 'b'], {c: {b: 2}}); //=> undefined
-   *      R.path(['a', 'b', 0], {a: {b: [1, 2, 3]}}); //=> 1
-   *      R.path(['a', 'b', -2], {a: {b: [1, 2, 3]}}); //=> 2
-   */
-
-  var path = _curry2(function path(pathAr, obj) {
-    return paths([pathAr], obj)[0];
-  });
-
-  /**
    * Returns a function that when supplied an object returns the indicated
    * property of that object, if it exists.
    *
@@ -1034,7 +975,12 @@
    *      R.compose(R.inc, R.prop('x'))({ x: 3 }) //=> 4
    */
 
-  var prop = _curry2(function prop(p, obj) { return path([p], obj); });
+  var prop = _curry2(function prop(p, obj) {
+    if (obj == null) {
+      return;
+    }
+    return _isInteger(p) ? nth(p, obj) : obj[p];
+  });
 
   /**
    * Returns a new list by plucking the same named property off all objects in
@@ -1851,51 +1797,6 @@
   });
 
   /**
-   * Returns a curried equivalent of the provided function. The curried function
-   * has two unusual capabilities. First, its arguments needn't be provided one
-   * at a time. If `f` is a ternary function and `g` is `R.curry(f)`, the
-   * following are equivalent:
-   *
-   *   - `g(1)(2)(3)`
-   *   - `g(1)(2, 3)`
-   *   - `g(1, 2)(3)`
-   *   - `g(1, 2, 3)`
-   *
-   * Secondly, the special placeholder value [`R.__`](#__) may be used to specify
-   * "gaps", allowing partial application of any combination of arguments,
-   * regardless of their positions. If `g` is as above and `_` is [`R.__`](#__),
-   * the following are equivalent:
-   *
-   *   - `g(1, 2, 3)`
-   *   - `g(_, 2, 3)(1)`
-   *   - `g(_, _, 3)(1)(2)`
-   *   - `g(_, _, 3)(1, 2)`
-   *   - `g(_, 2)(1)(3)`
-   *   - `g(_, 2)(1, 3)`
-   *   - `g(_, 2)(_, 3)(1)`
-   *
-   * @func
-   * @memberOf R
-   * @since v0.1.0
-   * @category Function
-   * @sig (* -> a) -> (* -> a)
-   * @param {Function} fn The function to curry.
-   * @return {Function} A new, curried function.
-   * @see R.curryN, R.partial
-   * @example
-   *
-   *      const addFourNumbers = (a, b, c, d) => a + b + c + d;
-   *
-   *      const curriedAddFourNumbers = R.curry(addFourNumbers);
-   *      const f = curriedAddFourNumbers(1, 2);
-   *      const g = f(3);
-   *      g(4); //=> 10
-   */
-  var curry = _curry1(function curry(fn) {
-    return curryN(fn.length, fn);
-  });
-
-  /**
    * Returns the result of calling its first argument with the remaining
    * arguments. This is occasionally useful as a converging function for
    * [`R.converge`](#converge): the first branch can produce a function while the
@@ -1906,7 +1807,7 @@
    * @memberOf R
    * @since v0.9.0
    * @category Function
-   * @sig (*... -> a),*... -> a
+   * @sig ((*... -> a), *...) -> a
    * @param {Function} fn The function to apply to the remaining arguments.
    * @param {...*} args Any number of positional arguments.
    * @return {*}
@@ -1915,19 +1816,24 @@
    *
    *      R.call(R.add, 1, 2); //=> 3
    *
-   *      const indentN = R.pipe(R.repeat(' '),
-   *                           R.join(''),
-   *                           R.replace(/^(?!$)/gm));
+   *      const indentN = R.pipe(
+   *        R.repeat(' '),
+   *        R.join(''),
+   *        R.replace(/^(?!$)/gm)
+   *      );
    *
-   *      const format = R.converge(R.call, [
-   *                                  R.pipe(R.prop('indent'), indentN),
-   *                                  R.prop('value')
-   *                              ]);
+   *      const format = R.converge(
+   *        R.call,
+   *        [
+   *          R.pipe(R.prop('indent'), indentN),
+   *          R.prop('value')
+   *        ]
+   *      );
    *
    *      format({indent: 2, value: 'foo\nbar\nbaz\n'}); //=> '  foo\n  bar\n  baz\n'
    * @symb R.call(f, a, b) = f(a, b)
    */
-  var call = curry(function call(fn) {
+  var call = _curry1(function call(fn) {
     return fn.apply(this, Array.prototype.slice.call(arguments, 1));
   });
 
@@ -2361,6 +2267,7 @@
    *
    *      f(3, 4); // -(3^4) + 1
    * @symb R.pipe(f, g, h)(a, b) = h(g(f(a, b)))
+   * @symb R.pipe(f, g, h)(a)(b) = h(g(f(a)))(b)
    */
   function pipe() {
     if (arguments.length === 0) {
@@ -2425,6 +2332,7 @@
    *      R.compose(Math.abs, R.add(1), R.multiply(2))(-4) //=> 7
    *
    * @symb R.compose(f, g, h)(a, b) = f(g(h(a, b)))
+   * @symb R.compose(f, g, h)(a)(b) = f(g(h(a)))(b)
    */
   function compose() {
     if (arguments.length === 0) {
@@ -2480,8 +2388,8 @@
   var identity = _curry1(_identity);
 
   /**
-   * Performs left-to-right function composition using transforming function. The first argument may have
-   * any arity; the remaining arguments must be unary.
+   * Performs left-to-right function composition using transforming function. The first function may have
+   * any arity; the remaining functions must be unary.
    *
    * **Note:** The result of pipeWith is not automatically curried. Transforming function is not used on the
    * first argument.
@@ -2491,7 +2399,8 @@
    * @since v0.26.0
    * @category Function
    * @sig ((* -> *), [((a, b, ..., n) -> o), (o -> p), ..., (x -> y), (y -> z)]) -> ((a, b, ..., n) -> z)
-   * @param {...Function} functions
+   * @param {Function} transformer The transforming function
+   * @param {Array} functions The functions to pipe
    * @return {Function}
    * @see R.composeWith, R.pipe
    * @example
@@ -2522,18 +2431,19 @@
   });
 
   /**
-   * Performs right-to-left function composition using transforming function. The last argument may have
-   * any arity; the remaining arguments must be unary.
+   * Performs right-to-left function composition using transforming function. The last function may have
+   * any arity; the remaining functions must be unary.
    *
-   * **Note:** The result of compose is not automatically curried. Transforming function is not used on the
-   * last argument.
+   * **Note:** The result of composeWith is not automatically curried. Transforming function is not used
+   * on the last argument.
    *
    * @func
    * @memberOf R
    * @since v0.26.0
    * @category Function
    * @sig ((* -> *), [(y -> z), (x -> y), ..., (o -> p), ((a, b, ..., n) -> o)]) -> ((a, b, ..., n) -> z)
-   * @param {...Function} ...functions The functions to compose
+   * @param {Function} transformer The transforming function
+   * @param {Array} functions The functions to compose
    * @return {Function}
    * @see R.compose, R.pipeWith
    * @example
@@ -3134,6 +3044,51 @@
         idx += 1;
       }
     });
+  });
+
+  /**
+   * Returns a curried equivalent of the provided function. The curried function
+   * has two unusual capabilities. First, its arguments needn't be provided one
+   * at a time. If `f` is a ternary function and `g` is `R.curry(f)`, the
+   * following are equivalent:
+   *
+   *   - `g(1)(2)(3)`
+   *   - `g(1)(2, 3)`
+   *   - `g(1, 2)(3)`
+   *   - `g(1, 2, 3)`
+   *
+   * Secondly, the special placeholder value [`R.__`](#__) may be used to specify
+   * "gaps", allowing partial application of any combination of arguments,
+   * regardless of their positions. If `g` is as above and `_` is [`R.__`](#__),
+   * the following are equivalent:
+   *
+   *   - `g(1, 2, 3)`
+   *   - `g(_, 2, 3)(1)`
+   *   - `g(_, _, 3)(1)(2)`
+   *   - `g(_, _, 3)(1, 2)`
+   *   - `g(_, 2)(1)(3)`
+   *   - `g(_, 2)(1, 3)`
+   *   - `g(_, 2)(_, 3)(1)`
+   *
+   * @func
+   * @memberOf R
+   * @since v0.1.0
+   * @category Function
+   * @sig (* -> a) -> (* -> a)
+   * @param {Function} fn The function to curry.
+   * @return {Function} A new, curried function.
+   * @see R.curryN, R.partial
+   * @example
+   *
+   *      const addFourNumbers = (a, b, c, d) => a + b + c + d;
+   *
+   *      const curriedAddFourNumbers = R.curry(addFourNumbers);
+   *      const f = curriedAddFourNumbers(1, 2);
+   *      const g = f(3);
+   *      g(4); //=> 10
+   */
+  var curry = _curry1(function curry(fn) {
+    return curryN(fn.length, fn);
   });
 
   /**
@@ -5100,6 +5055,9 @@
    *      R.hasIn('area', square);  //=> true
    */
   var hasIn = _curry2(function hasIn(prop, obj) {
+    if (isNil(obj)) {
+      return false;
+    }
     return prop in obj;
   });
 
@@ -5985,6 +5943,65 @@
    */
   var lensIndex = _curry1(function lensIndex(n) {
     return lens(nth(n), update(n));
+  });
+
+  /**
+   * Retrieves the values at given paths of an object.
+   *
+   * @func
+   * @memberOf R
+   * @category Object
+   * @typedefn Idx = [String | Int]
+   * @sig [Idx] -> {a} -> [a | Undefined]
+   * @param {Array} pathsArray The array of paths to be fetched.
+   * @param {Object} obj The object to retrieve the nested properties from.
+   * @return {Array} A list consisting of values at paths specified by "pathsArray".
+   * @see R.path
+   * @example
+   *
+   *      R.paths([['a', 'b'], ['p', 0, 'q']], {a: {b: 2}, p: [{q: 3}]}); //=> [2, 3]
+   *      R.paths([['a', 'b'], ['p', 'r']], {a: {b: 2}, p: [{q: 3}]}); //=> [2, undefined]
+   */
+  var paths = _curry2(function paths(pathsArray, obj) {
+    return pathsArray.map(function(paths) {
+      var val = obj;
+      var idx = 0;
+      var p;
+      while (idx < paths.length) {
+        if (val == null) {
+          return;
+        }
+        p = paths[idx];
+        val = _isInteger(p) ? nth(p, val) : val[p];
+        idx += 1;
+      }
+      return val;
+    });
+  });
+
+  /**
+   * Retrieve the value at a given path.
+   *
+   * @func
+   * @memberOf R
+   * @since v0.2.0
+   * @category Object
+   * @typedefn Idx = String | Int
+   * @sig [Idx] -> {a} -> a | Undefined
+   * @param {Array} path The path to use.
+   * @param {Object} obj The object to retrieve the nested property from.
+   * @return {*} The data at `path`.
+   * @see R.prop, R.nth
+   * @example
+   *
+   *      R.path(['a', 'b'], {a: {b: 2}}); //=> 2
+   *      R.path(['a', 'b'], {c: {b: 2}}); //=> undefined
+   *      R.path(['a', 'b', 0], {a: {b: [1, 2, 3]}}); //=> 1
+   *      R.path(['a', 'b', -2], {a: {b: [1, 2, 3]}}); //=> 2
+   */
+
+  var path = _curry2(function path(pathAr, obj) {
+    return paths([pathAr], obj)[0];
   });
 
   /**
@@ -7048,19 +7065,19 @@
    * @param {Function} onFailure The function to apply. Can return a value or a promise of a value.
    * @param {Promise} p
    * @return {Promise} The result of calling `p.then(null, onFailure)`
-   * @see R.then
+   * @see R.andThen
    * @example
    *
-   *      var failedFetch = (id) => Promise.reject('bad ID');
-   *      var useDefault = () => ({ firstName: 'Bob', lastName: 'Loblaw' })
+   *      const failedFetch = id => Promise.reject('bad ID');
+   *      const useDefault = () => ({ firstName: 'Bob', lastName: 'Loblaw' });
    *
-   *      //recoverFromFailure :: String -> Promise ({firstName, lastName})
-   *      var recoverFromFailure = R.pipe(
+   *      //recoverFromFailure :: String -> Promise ({ firstName, lastName })
+   *      const recoverFromFailure = R.pipe(
    *        failedFetch,
    *        R.otherwise(useDefault),
-   *        R.then(R.pick(['firstName', 'lastName'])),
+   *        R.andThen(R.pick(['firstName', 'lastName'])),
    *      );
-   *      recoverFromFailure(12345).then(console.log)
+   *      recoverFromFailure(12345).then(console.log);
    */
   var otherwise = _curry2(function otherwise(f, p) {
     _assertPromise('otherwise', p);
@@ -7090,7 +7107,7 @@
    * @param {*} v
    * @param {*} x
    * @return {*}
-   * @see R.prop, R.lensIndex, R.lensProp
+   * @see R.view, R.set, R.lens, R.lensIndex, R.lensProp, R.lensPath
    * @example
    *
    *      const headLens = R.lensIndex(0);
@@ -7528,7 +7545,7 @@
    *      R.propIs(Number, 'x', {});            //=> false
    */
   var propIs = _curry3(function propIs(type, name, obj) {
-    return is(type, obj[name]);
+    return is(type, prop(name, obj));
   });
 
   /**
@@ -7558,7 +7575,7 @@
    *      favoriteWithDefault(alice);  //=> 'Ramda'
    */
   var propOr = _curry3(function propOr(val, p, obj) {
-    return pathOr(val, [p], obj);
+    return defaultTo(val, prop(p, obj));
   });
 
   /**
@@ -7928,7 +7945,7 @@
    * @param {*} v
    * @param {*} x
    * @return {*}
-   * @see R.prop, R.lensIndex, R.lensProp
+   * @see R.view, R.over, R.lens, R.lensIndex, R.lensProp, R.lensPath
    * @example
    *
    *      const xLens = R.lensProp('x');
@@ -8452,14 +8469,18 @@
    * @see R.otherwise
    * @example
    *
-   *      var makeQuery = (email) => ({ query: { email }});
+   *      const makeQuery = email => ({ query: { email }});
+   *      const fetchMember = request =>
+   *        Promise.resolve({ firstName: 'Bob', lastName: 'Loblaw', id: 42 });
    *
-   *      //getMemberName :: String -> Promise ({firstName, lastName})
-   *      var getMemberName = R.pipe(
+   *      //getMemberName :: String -> Promise ({ firstName, lastName })
+   *      const getMemberName = R.pipe(
    *        makeQuery,
    *        fetchMember,
    *        R.andThen(R.pick(['firstName', 'lastName']))
    *      );
+   *
+   *      getMemberName('bob@gmail.com').then(console.log);
    */
   var andThen = _curry2(function andThen(f, p) {
     _assertPromise('andThen', p);
@@ -8732,7 +8753,8 @@
    * @example
    *
    *      R.tryCatch(R.prop('x'), R.F)({x: true}); //=> true
-   *      R.tryCatch(() => { throw 'foo'}, R.always('catched'))('bar') // => 'catched'
+   *      R.tryCatch(() => { throw 'foo'}, R.always('caught'))('bar') // =>
+   *      'caught'
    *      R.tryCatch(R.times(R.identity), R.always([]))('s') // => []
    *      R.tryCatch(() => { throw 'this is not a valid value'}, (err, value)=>({error : err,  value }))('bar') // => {'error': 'this is not a valid value', 'value': 'bar'}
    */
@@ -9086,7 +9108,7 @@
    * @param {Lens} lens
    * @param {*} x
    * @return {*}
-   * @see R.prop, R.lensIndex, R.lensProp
+   * @see R.set, R.over, R.lens, R.lensIndex, R.lensProp, R.lensPath
    * @example
    *
    *      const xLens = R.lensProp('x');
