@@ -23,7 +23,7 @@ export default function _dispatchable(methodNames, xf, fn) {
     }
     var args = Array.prototype.slice.call(arguments, 0);
     var obj = args.pop();
-    if (!_isArray(obj)) {
+    if (!_isArray(obj) && obj != null) {
       var idx = 0;
       while (idx < methodNames.length) {
         if (typeof obj[methodNames[idx]] === 'function') {

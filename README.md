@@ -8,6 +8,18 @@ A practical functional library for JavaScript programmers.
 [![dependencies](https://david-dm.org/ramda/ramda.svg)](https://david-dm.org/ramda/ramda)
 [![Gitter](https://badges.gitter.im/Join_Chat.svg)](https://gitter.im/ramda/ramda?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+Differences between [Ramda](https://ramdajs.com) and this Fork
+--------------------------------------------------------------
+### Implementations of Fantasy-Land functions for Promise
+
+Ramda functions working with Promise: `map`, `chain`, `ap`, `lift`
+
+### More Dispatching to Methods
+
+Ramda Function  | Dispatched to         | Where is this useful? 
+----------------|-----------------------|-----
+`tap`           | `.tap`                | [Ramda-Fantasy's Maybe](https://github.com/ramda/ramda-fantasy)
+`chain`         | `.flatMap`            | [Bacon.js](https://baconjs.github.io)
 
 
 Why Ramda?

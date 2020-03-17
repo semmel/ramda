@@ -1,6 +1,6 @@
 var R = require('../source');
 var eq = require('./shared/eq');
-var _isTransformer = require('../source/internal/_isTransformer');
+var _isTransformer = require('../source/internal/_isTransformer').default;
 
 
 describe('groupBy', function() {
