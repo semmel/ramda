@@ -1,7 +1,7 @@
 import _curry2 from './internal/_curry2';
 import _dispatchable from './internal/_dispatchable';
 import _xtap from './internal/_xtap';
-
+import {tap as tapPromise} from './static-land-modules/promise.js';
 
 /**
  * Runs the given function with the supplied object, then returns the object.
@@ -24,6 +24,10 @@ import _xtap from './internal/_xtap';
  * @symb R.tap(f, a) = a
  */
 var tap = _curry2(_dispatchable(['tap'], _xtap, function tap(fn, x) {
+  if (Object.prototype.toString.call(x) === '[object Promise]') {
+    return tapPromise(fn, x);
+  }
+
   fn(x);
   return x;
 }));

@@ -444,7 +444,7 @@ function _dispatchable(methodNames, xf, fn) {
     }
     var args = Array.prototype.slice.call(arguments, 0);
     var obj = args.pop();
-    if (!_isArray(obj)) {
+    if (!_isArray(obj) && obj != null) {
       var idx = 0;
       while (idx < methodNames.length) {
         if (typeof obj[methodNames[idx]] === 'function') {
@@ -853,7 +853,15 @@ const
 				fn(a).then(resolve)
 			)
 			.catch(reject);
-		});
+		}),
+
+  // In this implementation an exception in the side-effect is ignored
+  // tap :: (a -> *) -> Promise a -> Promise a
+  tap = (fn, p) => {
+    p.then(fn).catch(x => x);
+
+    return p;
+  };
 
 /**
  * Takes a function and
@@ -8418,7 +8426,11 @@ var _xtap = _curry2(function _xtap(f, xf) { return new XTap(f, xf); });
  *      // logs 'x is 100'
  * @symb R.tap(f, a) = a
  */
-var tap = _curry2(_dispatchable([], _xtap, function tap(fn, x) {
+var tap$1 = _curry2(_dispatchable(['tap'], _xtap, function tap$1(fn, x) {
+  if (Object.prototype.toString.call(x) === '[object Promise]') {
+    return tap(fn, x);
+  }
+
   fn(x);
   return x;
 }));
@@ -9684,7 +9696,7 @@ exports.take = take;
 exports.takeLast = takeLast;
 exports.takeLastWhile = takeLastWhile;
 exports.takeWhile = takeWhile;
-exports.tap = tap;
+exports.tap = tap$1;
 exports.test = test;
 exports.thunkify = thunkify;
 exports.times = times;

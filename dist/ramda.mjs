@@ -440,7 +440,7 @@ function _dispatchable(methodNames, xf, fn) {
     }
     var args = Array.prototype.slice.call(arguments, 0);
     var obj = args.pop();
-    if (!_isArray(obj)) {
+    if (!_isArray(obj) && obj != null) {
       var idx = 0;
       while (idx < methodNames.length) {
         if (typeof obj[methodNames[idx]] === 'function') {
@@ -849,7 +849,15 @@ const
 				fn(a).then(resolve)
 			)
 			.catch(reject);
-		});
+		}),
+
+  // In this implementation an exception in the side-effect is ignored
+  // tap :: (a -> *) -> Promise a -> Promise a
+  tap = (fn, p) => {
+    p.then(fn).catch(x => x);
+
+    return p;
+  };
 
 /**
  * Takes a function and
@@ -8414,7 +8422,11 @@ var _xtap = _curry2(function _xtap(f, xf) { return new XTap(f, xf); });
  *      // logs 'x is 100'
  * @symb R.tap(f, a) = a
  */
-var tap = _curry2(_dispatchable([], _xtap, function tap(fn, x) {
+var tap$1 = _curry2(_dispatchable(['tap'], _xtap, function tap$1(fn, x) {
+  if (Object.prototype.toString.call(x) === '[object Promise]') {
+    return tap(fn, x);
+  }
+
   fn(x);
   return x;
 }));
@@ -9468,4 +9480,4 @@ var thunkify = _curry1(function thunkify(fn) {
   });
 });
 
-export { F, T, __, add, addIndex, adjust, all, allPass, always, and, andThen, any, anyPass, ap$1 as ap, aperture, append, apply, applySpec, applyTo, ascend, assoc, assocPath, binary, bind, both, call, chain$1 as chain, clamp, clone, comparator, complement, compose, composeWith, concat, cond, construct, constructN, converge, countBy, curry, curryN, dec, defaultTo, descend, difference, differenceWith, dissoc, dissocPath, divide, drop, dropLast$1 as dropLast, dropLastWhile$1 as dropLastWhile, dropRepeats, dropRepeatsWith, dropWhile, either, empty, endsWith, eqBy, eqProps, equals, evolve, filter, find, findIndex, findLast, findLastIndex, flatten, flip, forEach, forEachObjIndexed, fromPairs, groupBy, groupWith, gt, gte, has, hasIn, hasPath, head, identical, identity, ifElse, inc, includes, indexBy, indexOf, init, innerJoin, insert, insertAll, intersection, intersperse, into, invert, invertObj, invoker, is, isEmpty, isNil, join, juxt, keys, keysIn, last, lastIndexOf, length, lens, lensIndex, lensPath, lensProp, lift, liftN, lt, lte, map$1 as map, mapAccum, mapAccumRight, mapObjIndexed, match, mathMod, max, maxBy, mean, median, memoizeWith, mergeAll, mergeDeepLeft, mergeDeepRight, mergeDeepWith, mergeDeepWithKey, mergeLeft, mergeRight, mergeWith, mergeWithKey, min, minBy, modulo, move, multiply, nAry, negate, none, not, nth, nthArg, o, objOf, of, omit, on, once, or, otherwise, over, pair, partial, partialRight, partition, path, pathEq, pathOr, pathSatisfies, paths, pick, pickAll, pickBy, pipe, pipeWith, pluck, prepend, product, project, prop, propEq, propIs, propOr, propSatisfies, props, range, reduce, reduceBy, reduceRight, reduceWhile, reduced, reject, remove, repeat, replace, reverse, scan, sequence, set, slice, sort, sortBy, sortWith, split, splitAt, splitEvery, splitWhen, splitWhenever, startsWith, subtract, sum, symmetricDifference, symmetricDifferenceWith, tail, take, takeLast, takeLastWhile, takeWhile, tap, test, thunkify, times, toLower, toPairs, toPairsIn, toString$1 as toString, toUpper, transduce, transpose, traverse, trim, tryCatch, type, unapply, unary, uncurryN, unfold, union, unionWith, uniq, uniqBy, uniqWith, unless, unnest, until, update, useWith, values, valuesIn, view, when, where, whereAny, whereEq, without, xor, xprod, zip, zipObj, zipWith };
+export { F, T, __, add, addIndex, adjust, all, allPass, always, and, andThen, any, anyPass, ap$1 as ap, aperture, append, apply, applySpec, applyTo, ascend, assoc, assocPath, binary, bind, both, call, chain$1 as chain, clamp, clone, comparator, complement, compose, composeWith, concat, cond, construct, constructN, converge, countBy, curry, curryN, dec, defaultTo, descend, difference, differenceWith, dissoc, dissocPath, divide, drop, dropLast$1 as dropLast, dropLastWhile$1 as dropLastWhile, dropRepeats, dropRepeatsWith, dropWhile, either, empty, endsWith, eqBy, eqProps, equals, evolve, filter, find, findIndex, findLast, findLastIndex, flatten, flip, forEach, forEachObjIndexed, fromPairs, groupBy, groupWith, gt, gte, has, hasIn, hasPath, head, identical, identity, ifElse, inc, includes, indexBy, indexOf, init, innerJoin, insert, insertAll, intersection, intersperse, into, invert, invertObj, invoker, is, isEmpty, isNil, join, juxt, keys, keysIn, last, lastIndexOf, length, lens, lensIndex, lensPath, lensProp, lift, liftN, lt, lte, map$1 as map, mapAccum, mapAccumRight, mapObjIndexed, match, mathMod, max, maxBy, mean, median, memoizeWith, mergeAll, mergeDeepLeft, mergeDeepRight, mergeDeepWith, mergeDeepWithKey, mergeLeft, mergeRight, mergeWith, mergeWithKey, min, minBy, modulo, move, multiply, nAry, negate, none, not, nth, nthArg, o, objOf, of, omit, on, once, or, otherwise, over, pair, partial, partialRight, partition, path, pathEq, pathOr, pathSatisfies, paths, pick, pickAll, pickBy, pipe, pipeWith, pluck, prepend, product, project, prop, propEq, propIs, propOr, propSatisfies, props, range, reduce, reduceBy, reduceRight, reduceWhile, reduced, reject, remove, repeat, replace, reverse, scan, sequence, set, slice, sort, sortBy, sortWith, split, splitAt, splitEvery, splitWhen, splitWhenever, startsWith, subtract, sum, symmetricDifference, symmetricDifferenceWith, tail, take, takeLast, takeLastWhile, takeWhile, tap$1 as tap, test, thunkify, times, toLower, toPairs, toPairsIn, toString$1 as toString, toUpper, transduce, transpose, traverse, trim, tryCatch, type, unapply, unary, uncurryN, unfold, union, unionWith, uniq, uniqBy, uniqWith, unless, unnest, until, update, useWith, values, valuesIn, view, when, where, whereAny, whereEq, without, xor, xprod, zip, zipObj, zipWith };

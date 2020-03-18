@@ -68,8 +68,34 @@ const
 				fn(a).then(resolve)
 			)
 			.catch(reject);
-		});
+		}),
+
+  // In this implementation an exception in the side-effect rubs off to the Promise
+  // tap :: (a -> *) -> Promise a -> Promise a
+  tap_ = (fn, p) =>
+    p.then(x => {
+      fn(x);
+      return x;
+    }),
+
+  /**
+	 * Execute a synchronous side effect.
+   * In this implementation an exception in the side-effect is ignored.
+	 * <pre>
+	 * promise X ---------> X --->
+	 *          \
+	 *           - fn(X) -> Y
+	 * </pre>
+	 *
+	 * @aka forEach
+   */
+  // tap :: (a -> *) -> Promise a -> Promise a
+  tap = (fn, p) => {
+    p.then(fn).catch(x => x);
+
+    return p;
+  };
 
 export {
-	of, ap, map, chain
+	of, ap, map, chain, tap
 };
