@@ -3,7 +3,8 @@ Ramda
 
 A practical functional library for JavaScript programmers.
 
-[![Build Status](https://travis-ci.org/ramda/ramda.svg?branch=master)](https://travis-ci.org/ramda/ramda)
+[![Build Status](https://github.com/ramda/ramda/workflows/Build/badge.svg)](https://github.com/ramda/ramda/actions?query=workflow%3ABuild)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/953a3c5ee423e5301d18/test_coverage)](https://codeclimate.com/github/ramda/ramda/test_coverage)
 [![npm module](https://badge.fury.io/js/ramda.svg)](https://www.npmjs.org/package/ramda)
 [![dependencies](https://david-dm.org/ramda/ramda.svg)](https://david-dm.org/ramda/ramda)
 [![Gitter](https://badges.gitter.im/Join_Chat.svg)](https://gitter.im/ramda/ramda?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
@@ -89,6 +90,11 @@ Then in the console:
 
 ```javascript
 const R = require('ramda');
+```
+
+To use directly in [Deno](https://deno.land):
+```javascript
+import * as R from "https://deno.land/x/ramda/index.js";
 ```
 
 To use directly in the browser:

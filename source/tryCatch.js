@@ -1,6 +1,6 @@
-import _arity from './internal/_arity';
-import _concat from './internal/_concat';
-import _curry2 from './internal/_curry2';
+import _arity from './internal/_arity.js';
+import _concat from './internal/_concat.js';
+import _curry2 from './internal/_curry2.js';
 
 /**
  * `tryCatch` takes two functions, a `tryer` and a `catcher`. The returned
@@ -17,7 +17,7 @@ import _curry2 from './internal/_curry2';
  * @sig (...x -> a) -> ((e, ...x) -> a) -> (...x -> a)
  * @param {Function} tryer The function that may throw.
  * @param {Function} catcher The function that will be evaluated if `tryer` throws.
- * @return {Function} A new function that will catch exceptions and send then to the catcher.
+ * @return {Function} A new function that will catch exceptions and send them to the catcher.
  * @example
  *
  *      R.tryCatch(R.prop('x'), R.F)({x: true}); //=> true
