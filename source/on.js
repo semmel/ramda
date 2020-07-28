@@ -9,6 +9,7 @@ import curryN from './internal/_curryN.js';
  *
  * @func
  * @memberOf R
+ * @since v0.27.0
  * @category Function
  * @sig ((a, a) -> b) -> (c -> a) -> c -> c -> b
  * @param {Function} f a binary function

@@ -1,4 +1,4 @@
-XYZ = node_modules/.bin/xyz --repo git@github.com:ramda/ramda.git --script scripts/prepublish
+XYZ = node_modules/.bin/xyz --repo git@github.com:semmel/ramda.git --script scripts/prepublish --publish-command 'npm publish --dry-run'
 
 
 dist/ramda.js:
