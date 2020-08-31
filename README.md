@@ -13,7 +13,7 @@ Note that the version number of `semmel-ramda` is not related to the version num
 
 Installation
 ------------
-`npm install semmel-ramda`
+`npm install ramda@npm:semmel-ramda`
 
 Ramda
 =============
