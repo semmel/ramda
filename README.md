@@ -1,5 +1,8 @@
 semmel-ramda
 ============
+
+[![NPM Version](https://img.shields.io/npm/v/semmel-ramda.svg?style=flat-square)](https://www.npmjs.com/package/semmel-ramda)
+
 This fork of [Ramda](https://ramdajs.com) serves to publish a more up-to-date version of Ramda to npm which does not suffer from the [broken build process](https://github.com/ramda/ramda/issues/3062).
 
 It includes committed code which is not published in the `ramda` package. E.g. 
