@@ -6,7 +6,6 @@ import _curry3 from './internal/_curry3.js';
  *
  * @func
  * @memberOf R
- * @since v0.27.0
  * @category List
  * @sig Number -> Number -> [a] -> [a]
  * @param {Number} from The source index

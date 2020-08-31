@@ -7,7 +7,6 @@ import _curry2 from './internal/_curry2.js';
  *
  * @func
  * @memberOf R
- * @since v0.27.0
  * @category Logic
  * @sig a -> b -> Boolean
  * @param {Any} a
