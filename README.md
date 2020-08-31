@@ -1,3 +1,17 @@
+semmel-ramda
+============
+This fork of [Ramda](https://ramdajs.com) serves to publish a more up-to-date version of Ramda to npm which does not suffer from the [broken build process](https://github.com/ramda/ramda/issues/3062).
+
+It includes committed code which is not published in the `ramda` package. E.g. 
+- Update `package.json` to allow [consuming the library as ES module](https://github.com/ramda/ramda/pull/2999), 
+- Includes the [missing `R.on`](https://github.com/ramda/ramda/issues/3062). 
+
+Note that the version number of `semmel-ramda` is not related to the version number of Ramda, but it's rather a byproduct of running `make release-minor`. 
+
+Installation
+------------
+`npm install semmel-ramda`
+
 Ramda
 =============
 
