@@ -13,7 +13,8 @@ Note that the version number of `semmel-ramda` is not related to the version num
 
 Installation
 ------------
-`npm install ramda@npm:semmel-ramda`
+- as `ramda` alias (which keeps `ramda` in your code, but will break in transient packages) `npm install ramda@npm:semmel-ramda`
+- the usual way `npm install semmel-ramda` 
 
 Ramda
 =============
