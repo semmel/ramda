@@ -1,13 +1,13 @@
 //  Ramda v0.32.0
 //  https://github.com/ramda/ramda
-//  (c) 2013-2020 Scott Sauyet, Michael Hurley, and David Chambers
+//  (c) 2013-2021 Scott Sauyet, Michael Hurley, and David Chambers
 //  Ramda may be freely distributed under the MIT license.
 
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
   (global = global || self, factory(global.R = {}));
-}(this, function (exports) { 'use strict';
+}(this, (function (exports) { 'use strict';
 
   /**
    * A function that always returns `false`. Any passed in parameters are ignored.
@@ -512,17 +512,18 @@
    * object in list position (last argument). If it is an array, executes [fn].
    * Otherwise, if it has a function with one of the given method names, it will
    * execute that function (functor case). Otherwise, if it is a transformer,
-   * uses transducer [xf] to return a new transformer (transducer case).
+   * uses transducer created by [transducerCreator] to return a new transformer
+   * (transducer case).
    * Otherwise, it will default to executing [fn].
    *
    * @private
    * @param {Array} methodNames properties to check for a custom implementation
-   * @param {Function} xf transducer to initialize if object is transformer
+   * @param {Function} transducerCreator transducer factory if object is transformer
    * @param {Function} fn default ramda implementation
    * @return {Function} A function that dispatches on object in list position
    */
 
-  function _dispatchable(methodNames, xf, fn) {
+  function _dispatchable(methodNames, transducerCreator, fn) {
     return function () {
       if (arguments.length === 0) {
         return fn();
@@ -542,7 +543,7 @@
         }
 
         if (_isTransformer(obj)) {
-          var transducer = xf.apply(null, Array.prototype.slice.call(arguments, 0, -1));
+          var transducer = transducerCreator.apply(null, Array.prototype.slice.call(arguments, 0, -1));
           return transducer(obj);
         }
       }
@@ -1945,11 +1946,11 @@
    *
    *      const madd3 = R.lift((a, b, c) => a + b + c);
    *
-   *      madd3([100, 200, 300], [10, 20], [1]); //=> [111, 121, 211, 221, 311, 321]
+   *      madd3([100, 200], [30, 40], [5, 6, 7]); //=> [135, 136, 137, 145, 146, 147, 235, 236, 237, 245, 246, 247]
    *
    *      const madd5 = R.lift((a, b, c, d, e) => a + b + c + d + e);
    *
-   *      madd5([1,2], [3], [4, 5], [6], [7, 8]); //=> [21, 22, 22, 23, 22, 23, 23, 24]
+   *      madd5([10, 20], [1], [2, 3], [4], [100, 200]); //=> [117, 217, 118, 218, 127, 227, 128, 228]
    */
 
   var lift = _curry1(function lift(fn) {
@@ -3170,10 +3171,10 @@
     }; //  mapPairs :: (Object, [String]) -> [String]
 
 
-    var mapPairs = function mapPairs(obj, keys$$1) {
+    var mapPairs = function mapPairs(obj, keys) {
       return _map(function (k) {
         return _quote(k) + ': ' + recur(obj[k]);
-      }, keys$$1.slice().sort());
+      }, keys.slice().sort());
     };
 
     switch (Object.prototype.toString.call(x)) {
@@ -3607,6 +3608,9 @@
    * the String-returning function `keyFn` on each element and reduces the elements
    * of each group to a single value via the reducer function `valueFn`.
    *
+   * The value function receives two values: *(acc, value)*. It may use
+   * [`R.reduced`](#reduced) to short circuit the iteration.
+   *
    * This function is basically a more general [`groupBy`](#groupBy) function.
    *
    * Acts as a transducer if a transformer is given in list position.
@@ -3623,7 +3627,7 @@
    * @param {Array} list The array to group.
    * @return {Object} An object with the output of `keyFn` for keys, mapped to the output of
    *         `valueFn` for elements which produced that key when passed to `keyFn`.
-   * @see R.groupBy, R.reduce
+   * @see R.groupBy, R.reduce, R.reduced
    * @example
    *
    *      const groupNames = (acc, {name}) => acc.concat(name)
@@ -3647,7 +3651,13 @@
   var reduceBy = _curryN(4, [], _dispatchable([], _xreduceBy, function reduceBy(valueFn, valueAcc, keyFn, list) {
     return _reduce(function (acc, elt) {
       var key = keyFn(elt);
-      acc[key] = valueFn(_has(key, acc) ? acc[key] : _clone(valueAcc, [], [], false), elt);
+      var value = valueFn(_has(key, acc) ? acc[key] : _clone(valueAcc, [], [], false), elt);
+
+      if (value && value['@@transducer/reduced']) {
+        return _reduced(acc);
+      }
+
+      acc[key] = value;
       return acc;
     }, {}, list);
   }));
@@ -4884,6 +4894,10 @@
    */
 
   var evolve = _curry2(function evolve(transformations, object) {
+    if (!_isObject(object) && !_isArray(object)) {
+      return object;
+    }
+
     var result = object instanceof Array ? [] : {};
     var transformation, key, type;
 
@@ -7386,6 +7400,112 @@
   });
 
   /**
+   * Makes a shallow clone of an object, applying the given fn to the specified
+   * property with the given value. Note that this copies and flattens prototype
+   * properties onto the new object as well. All non-primitive properties are
+   * copied by reference.
+   *
+   * @private
+   * @param {String|Number} prop The property name to set
+   * @param {Function} fn The function to apply to the property
+   * @param {Object|Array} obj The object to clone
+   * @return {Object|Array} A new object equivalent to the original except for the changed property.
+   */
+
+  function _modify(prop, fn, obj) {
+    if (_isInteger(prop) && _isArray(obj)) {
+      var arr = [].concat(obj);
+      arr[prop] = fn(arr[prop]);
+      return arr;
+    }
+
+    var result = {};
+
+    for (var p in obj) {
+      result[p] = obj[p];
+    }
+
+    result[prop] = fn(result[prop]);
+    return result;
+  }
+
+  /**
+   * Creates a shallow clone of the passed object by applying an `fn` function
+   * to the value at the given path.
+   *
+   * The function will not be invoked, and the object will not change
+   * if its corresponding path does not exist in the object.
+   * All non-primitive properties are copied to the new object by reference.
+   *
+   * @func
+   * @memberOf R
+   * @category Object
+   * @sig [Idx] -> (v -> v) -> {k: v} -> {k: v}
+   * @param {Array} path The path to be modified.
+   * @param {Function} fn The function to apply to the path.
+   * @param {Object} object The object to be transformed.
+   * @return {Object} The transformed object.
+   * @example
+   *
+   *      const person = {name: 'James', address: { zipCode: '90216' }};
+   *      R.modifyPath(['address', 'zipCode'], R.reverse, person); //=> {name: 'James', address: { zipCode: '61209' }}
+   *
+   *      // Can handle arrays too
+   *      const person = {name: 'James', addresses: [{ zipCode: '90216' }]};
+   *      R.modifyPath(['addresses', 0, 'zipCode'], R.reverse, person); //=> {name: 'James', addresses: [{ zipCode: '61209' }]}
+   */
+
+  var modifyPath = _curry3(function modifyPath(path, fn, object) {
+    if (!_isObject(object) && !_isArray(object) || path.length === 0) {
+      return object;
+    }
+
+    var idx = path[0];
+
+    if (!_has(idx, object)) {
+      return object;
+    }
+
+    if (path.length === 1) {
+      return _modify(idx, fn, object);
+    }
+
+    var val = modifyPath(Array.prototype.slice.call(path, 1), fn, object[idx]);
+
+    if (val === object[idx]) {
+      return object;
+    }
+
+    return _assoc(idx, val, object);
+  });
+
+  /**
+   * Creates a copy of the passed object by applying an `fn` function to the given `prop` property.
+   *
+   * The function will not be invoked, and the object will not change
+   * if its corresponding property does not exist in the object.
+   * All non-primitive properties are copied to the new object by reference.
+   *
+   * @func
+   * @memberOf R
+   * @category Object
+   * @sig Idx -> (v -> v) -> {k: v} -> {k: v}
+   * @param {String|Number} prop The property to be modified.
+   * @param {Function} fn The function to apply to the property.
+   * @param {Object} object The object to be transformed.
+   * @return {Object} The transformed object.
+   * @example
+   *
+   *      const person = {name: 'James', age: 20, pets: ['dog', 'cat']};
+   *      R.modify('age', R.add(1), person); //=> {name: 'James', age: 21, pets: ['dog', 'cat']}
+   *      R.modify('pets', R.append('turtle'), person); //=> {name: 'James', age: 20, pets: ['dog', 'cat', 'turtle']}
+   */
+
+  var modify = _curry3(function modify(prop, fn, object) {
+    return modifyPath([prop], fn, object);
+  });
+
+  /**
    * Divides the first parameter by the second and returns the remainder. Note
    * that this function preserves the JavaScript-style behavior for modulo. For
    * mathematical modulo see [`mathMod`](#mathMod).
@@ -7868,7 +7988,7 @@
    *
    *      const multiply2 = (a, b) => a * b;
    *      const double = R.partial(multiply2, [2]);
-   *      double(2); //=> 4
+   *      double(3); //=> 6
    *
    *      const greet = (salutation, title, firstName, lastName) =>
    *        salutation + ', ' + title + ' ' + firstName + ' ' + lastName + '!';
@@ -8331,9 +8451,10 @@
   });
 
   /**
-   * If the given, non-null object has an own property with the specified name,
-   * returns the value of that property. Otherwise returns the provided default
-   * value.
+   * Return the specified property of the given non-null object if the property
+   * is present and it's value is not `null`, `undefined` or `NaN`.
+   *
+   * Otherwise the first argument is returned.
    *
    * @func
    * @memberOf R
@@ -8455,7 +8576,8 @@
    * right to the left.
    *
    * The iterator function receives two values: *(value, acc)*, while the arguments'
-   * order of `reduce`'s iterator function is *(acc, value)*.
+   * order of `reduce`'s iterator function is *(acc, value)*. `reduceRight` may use [`reduced`](#reduced)
+   * to short circuit the iteration.
    *
    * Note: `R.reduceRight` does not skip deleted or unassigned indices (sparse
    * arrays), unlike the native `Array.prototype.reduceRight` method. For more details
@@ -8472,7 +8594,7 @@
    * @param {*} acc The accumulator value.
    * @param {Array} list The list to iterate over.
    * @return {*} The final, accumulated value.
-   * @see R.reduce, R.addIndex
+   * @see R.reduce, R.addIndex, R.reduced
    * @example
    *
    *      R.reduceRight(R.subtract, 0, [1, 2, 3, 4]) // => (1 - (2 - (3 - (4 - 0)))) = -2
@@ -8494,6 +8616,12 @@
 
     while (idx >= 0) {
       acc = fn(list[idx], acc);
+
+      if (acc && acc['@@transducer/reduced']) {
+        acc = acc['@@transducer/value'];
+        break;
+      }
+
       idx -= 1;
     }
 
@@ -8505,7 +8633,8 @@
    * through the list, successively calling the iterator function. `reduceWhile`
    * also takes a predicate that is evaluated before each step. If the predicate
    * returns `false`, it "short-circuits" the iteration and returns the current
-   * value of the accumulator.
+   * value of the accumulator. `reduceWhile` may alternatively be short-circuited
+   * via [`reduced`](#reduced).
    *
    * @func
    * @memberOf R
@@ -8541,9 +8670,11 @@
    * and transduce functions. The returned value should be considered a black
    * box: the internal structure is not guaranteed to be stable.
    *
-   * Note: this optimization is only available to the below functions:
+   * This optimization is available to the below functions:
    * - [`reduce`](#reduce)
    * - [`reduceWhile`](#reduceWhile)
+   * - [`reduceBy`](#reduceBy)
+   * - [`reduceRight`](#reduceRight)
    * - [`transduce`](#transduce)
    *
    * @func
@@ -8553,7 +8684,7 @@
    * @sig a -> *
    * @param {*} x The final value of the reduce.
    * @return {*} The wrapped value.
-   * @see R.reduce, R.reduceWhile, R.transduce
+   * @see R.reduce, R.reduceWhile, R.reduceBy, R.reduceRight, R.transduce
    * @example
    *
    *     R.reduce(
@@ -8754,7 +8885,7 @@
    *      R.set(xLens, 8, {x: 1, y: 2});  //=> {x: 8, y: 2}
    */
 
-  var set$1 = _curry3(function set(lens, v, x) {
+  var set = _curry3(function set(lens, v, x) {
     return over(lens, always(v), x);
   });
 
@@ -9441,7 +9572,7 @@
    * A transducer is a function that accepts a transformer and returns a
    * transformer and can be composed directly.
    *
-   * A transformer is an an object that provides a 2-arity reducing iterator
+   * A transformer is an object that provides a 2-arity reducing iterator
    * function, step, 0-arity initial value function, init, and 1-arity result
    * extraction function, result. The step function is used as the iterator
    * function in reduce. The result function is used to convert the final
@@ -9933,6 +10064,43 @@
   });
 
   /**
+   *
+   * Deconstructs an array field from the input documents to output a document for each element.
+   * Each output document is the input document with the value of the array field replaced by the element.
+   *
+   * @func
+   * @memberOf R
+   * @category Object
+   * @sig String -> {k: [v]} -> [{k: v}]
+   * @param {String} key The key to determine which property of the object should be unwind
+   * @param {Object} object The object containing list under property named as key which is to unwind
+   * @return {List} A new list of object containing the value of input key having list replaced by each element in the object.
+   * @example
+   *
+   * R.unwind('hobbies', {
+   *   name: 'alice',
+   *   hobbies: ['Golf', 'Hacking'],
+   *   colors: ['red', 'green'],
+   * });
+   * // [
+   * //   { name: 'alice', hobbies: 'Golf', colors: ['red', 'green'] },
+   * //   { name: 'alice', hobbies: 'Hacking', colors: ['red', 'green'] }
+   * // ]
+   */
+
+  var unwind = _curry2(function (key, object) {
+    // If key is not in object or key is not as a list in object
+    if (!(key in object && _isArray(object[key]))) {
+      return [object];
+    } // Map over object[key] which is a list and assoc each element with key
+
+
+    return _map(function (item) {
+      return _assoc(key, item, object);
+    }, object[key]);
+  });
+
+  /**
    * Returns a list of all the properties, including prototype properties, of the
    * supplied object.
    * Note that the order of the output array is not guaranteed to be consistent
@@ -10390,6 +10558,7 @@
   exports.allPass = allPass;
   exports.always = always;
   exports.and = and;
+  exports.andThen = andThen;
   exports.any = any;
   exports.anyPass = anyPass;
   exports.ap = ap;
@@ -10517,11 +10686,12 @@
   exports.mergeWithKey = mergeWithKey;
   exports.min = min;
   exports.minBy = minBy;
+  exports.modify = modify;
+  exports.modifyPath = modifyPath;
   exports.modulo = modulo;
   exports.move = move;
   exports.multiply = multiply;
   exports.nAry = nAry;
-  exports.partialObject = partialObject;
   exports.negate = negate;
   exports.none = none;
   exports.not = not;
@@ -10538,13 +10708,14 @@
   exports.over = over;
   exports.pair = pair;
   exports.partial = partial;
+  exports.partialObject = partialObject;
   exports.partialRight = partialRight;
   exports.partition = partition;
   exports.path = path;
-  exports.paths = paths;
   exports.pathEq = pathEq;
   exports.pathOr = pathOr;
   exports.pathSatisfies = pathSatisfies;
+  exports.paths = paths;
   exports.pick = pick;
   exports.pickAll = pickAll;
   exports.pickBy = pickBy;
@@ -10574,7 +10745,7 @@
   exports.reverse = reverse;
   exports.scan = scan;
   exports.sequence = sequence;
-  exports.set = set$1;
+  exports.set = set;
   exports.slice = slice;
   exports.sort = sort;
   exports.sortBy = sortBy;
@@ -10596,7 +10767,7 @@
   exports.takeWhile = takeWhile;
   exports.tap = tap;
   exports.test = test;
-  exports.andThen = andThen;
+  exports.thunkify = thunkify;
   exports.times = times;
   exports.toLower = toLower;
   exports.toPairs = toPairs;
@@ -10621,6 +10792,7 @@
   exports.unless = unless;
   exports.unnest = unnest;
   exports.until = until;
+  exports.unwind = unwind;
   exports.update = update;
   exports.useWith = useWith;
   exports.values = values;
@@ -10636,8 +10808,7 @@
   exports.zip = zip;
   exports.zipObj = zipObj;
   exports.zipWith = zipWith;
-  exports.thunkify = thunkify;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));
