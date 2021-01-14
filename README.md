@@ -3,7 +3,8 @@ semmel-ramda
 
 [![NPM Version](https://img.shields.io/npm/v/semmel-ramda.svg?style=flat-square)](https://www.npmjs.com/package/semmel-ramda)
 
-This fork of [Ramda](https://ramdajs.com) serves to publish a more up-to-date version of Ramda to npm which does not suffer from the [broken build process](https://github.com/ramda/ramda/issues/3062).
+This fork of [Ramda](https://ramdajs.com) serves to publish a more up-to-date version of Ramda to npm which does not suffer from the [broken build process](https://github.com/ramda/ramda/issues/3062). The latest *semmel-ramda* `v.0.33.0` corresponds to *ramda*'s master branch in January 2021.  
+
 
 It includes committed code which is not published in the `ramda` package. E.g. 
 - Update `package.json` to allow [consuming the library as ES module](https://github.com/ramda/ramda/pull/2999), 
@@ -11,7 +12,16 @@ It includes committed code which is not published in the `ramda` package. E.g.
 - Includes [modify and modifyPath](https://github.com/ramda/ramda/pull/3107)
 - Includes [unwind](https://github.com/ramda/ramda/pull/3125)
 
-Note that the version number of `semmel-ramda` is not related to the version number of Ramda, but it's rather a byproduct of running `make release-minor`. 
+Note that the *version number* of `semmel-ramda` is not related to the version number of Ramda, but it's rather a byproduct of running `make release-minor`. 
+
+Update to recent ramda git
+--------------------------
+
+1. merge from `ramda/master` -> `semmel-ramda/master`
+1. `npm install` (This triggers `npm prepare`)
+1. `git commit -a -m "Update to recent`
+1. `git push`
+1. `make release-minor`
 
 Installation
 ------------
