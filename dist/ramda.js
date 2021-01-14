@@ -1,4 +1,4 @@
-//  Ramda v0.32.0
+//  Ramda v0.33.0
 //  https://github.com/ramda/ramda
 //  (c) 2013-2021 Scott Sauyet, Michael Hurley, and David Chambers
 //  Ramda may be freely distributed under the MIT license.
@@ -7439,6 +7439,7 @@
    *
    * @func
    * @memberOf R
+   * @since v0.33.0
    * @category Object
    * @sig [Idx] -> (v -> v) -> {k: v} -> {k: v}
    * @param {Array} path The path to be modified.
@@ -7488,6 +7489,7 @@
    *
    * @func
    * @memberOf R
+   * @since v0.33.0
    * @category Object
    * @sig Idx -> (v -> v) -> {k: v} -> {k: v}
    * @param {String|Number} prop The property to be modified.
@@ -10070,6 +10072,7 @@
    *
    * @func
    * @memberOf R
+   * @since v0.33.0
    * @category Object
    * @sig String -> {k: [v]} -> [{k: v}]
    * @param {String} key The key to determine which property of the object should be unwind
